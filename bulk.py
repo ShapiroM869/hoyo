@@ -3,19 +3,28 @@ import streamlit as st
 import pandas as pd
 import joblib
 import os
-
+import requests
 # -----------------------------
 # Load Model and Scaler
 # -----------------------------
 #model = joblib.load("aml_randomforest_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-MODEL_URL = "https://drive.google.com/uc?id=15XBWPxvNgAI1pQb3sbGTuzp_tK0eygZZ"
+MODEL_URL = "https://drive.google.com/uc?export=download&id=15XBWPxvNgAI1pQb3sbGTuzp_tK0eygZZ"
 MODEL_PATH = "aml_randomforest_model.pkl"
 
-if not os.path.exists(MODEL_PATH):
-    with open(MODEL_PATH, "wb") as f:
-        f.write(requests.get(MODEL_URL).content)
+def download_file(url, destination):
+    session = requests.Session()
+    response = session.get(url, stream=True)
+    
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(1024):
+            if chunk:
+                f.write(chunk)
+
+# Download only if not exists OR file is broken
+if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 1000:
+    download_file(MODEL_URL, MODEL_PATH)
 
 model = joblib.load(MODEL_PATH)
 
