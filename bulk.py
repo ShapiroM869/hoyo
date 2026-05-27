@@ -10,23 +10,34 @@ import requests
 #model = joblib.load("aml_randomforest_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-MODEL_URL = "https://drive.google.com/uc?export=download&id=15XBWPxvNgAI1pQb3sbGTuzp_tK0eygZZ"
+
+MODEL_ID = "15XBWPxvNgAI1pQb3sbGTuzp_tK0eygZZ"
 MODEL_PATH = "aml_randomforest_model.pkl"
 
-def download_file(url, destination):
+def download_from_drive(file_id, destination):
+    URL = "https://drive.google.com/uc?export=download"
     session = requests.Session()
-    response = session.get(url, stream=True)
+
+    response = session.get(URL, params={"id": file_id}, stream=True)
     
+    # Handle large file confirmation
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            response = session.get(URL, params={"id": file_id, "confirm": value}, stream=True)
+
     with open(destination, "wb") as f:
-        for chunk in response.iter_content(1024):
+        for chunk in response.iter_content(32768):
             if chunk:
                 f.write(chunk)
 
-# Download only if not exists OR file is broken
-if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 1000:
-    download_file(MODEL_URL, MODEL_PATH)
+# ✅ FORCE clean download (important)
+if os.path.exists(MODEL_PATH):
+    os.remove(MODEL_PATH)
+
+download_from_drive(MODEL_ID, MODEL_PATH)
 
 model = joblib.load(MODEL_PATH)
+
 
 st.set_page_config(page_title="AML Detection System", layout="wide")
 
